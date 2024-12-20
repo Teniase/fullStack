@@ -1,0 +1,78 @@
+1. 게시판 (답변)
+   1) content.jsp 
+       - readcount 읽을 때마다 1증가
+         update board1 set readcount = readcount + 1 where num=?;
+   2) 수정/삭제할 때 비회원인 경우에는 password를 체크하여 맞는 사람에게만 권한 부여
+       회원 게시판은 로그인할 때 password체크하므로 불필요
+       삭제는 실제 데이터를 삭제하는 것이 아니라 삭제 표시(del='y')
+   3) 답변 게시판
+       - 입력할 때
+          ref : 처음에는 num과 같고 답변글은 답변글의 ref와 같음
+          re_step :  답변글 순서, 처음에는 0, 
+                       답변글인 경우 ref가 같고 re_step이 읽은글보다 크면 re_step = re_step+1
+                       답변글은 re_step + 1
+          re_level : 들여쓰기, 처음에는 0, 답변은 읽은 글의 re_level + 1
+       - 조회할 때
+         . mysql 
+             select * from board1 order by ref desc, re_step; 
+         . oracle
+            select * from board1 order by ref desc, re_step; 
+        - list.jsp
+            borad.re_level > 0 크면 
+                들여쓰기 img
+                답변 img
+2. 페이징
+  1) 조회할 때 : 원하는 번호부터 원하는 갯수
+         . mysql 
+             select * from board1 order by ref desc, re_step limit startRow - 1, rowPerPage;
+         . oracle version 11이하
+             select * from (select rownum rn, a.* from(
+                 select * from board1 order by ref desc, re_step)a)
+                    where rn between startRow and startRow + rowPerPage - 1;
+         . oracle 12version 이후
+            select * from board1 order by ref desc, re_step offser startRow - 1 rows, 
+                  fetch first rowPerpage rows;
+    2) startRow = (currentPage - 1) * rowPerPage + 1;
+        List<Board> list = bd.list(startRow, rowPerPage);
+    3) list.jsp
+       - 페이징 : list.jsp?pageNum="보고싶은 페이지 번호"
+       - pageNum = requestGetParameter("pageNum");
+       - 233 데이터 갯수, 한페이지에 10개씩 보인다면 24page       
+   
+1. 쇼핑몰
+   1) 사용자
+       -  회원가입, 본인것만 수정/삭제
+       - 게시글          "
+       - 조회, 구매
+       - 결재
+   2) 관리(운영)자
+       - 모든 회원정보, 모든 회원정보를 권한에 따라 수정/삭제
+       - 게시글
+       - 상품을 등록, 변경
+       - 거래 금융기관 
+
+off line
+결재   : 카드 16자리  --- 4자리 카드종료  2자리(지점) ----  serial 번호
+                     |----------------------------------------------------------|
+     고객       백화점 -------------       KIS                    ----------  현대
+      카드      술집    -------------       단말기 설치회사                 삼성
+         |        음식점 -------------                                             국민, 신한
+         |---------------------------------------------------------------------|
+
+on-line
+off line
+결재   : 카드 16자리    ---   4자리 카드종료  2자리(지점) ----  serial 번호
+                      |-------| |------------------------------------------------|
+     고객       쇼핑몰 -------------       KIS                    ----------  현대
+      카드      "       ---- PG ----       단말기 설치회사                 삼성
+         |        "       -------------                                             국민, 신한
+         |---------------------------------------------------------------------|
+PG : pagment gateway 결제대행사
+무통장 입금
+
+수정하는 경우에는 전달된 값을  value에 넣어서 화면에 노출
+<input type="text" name="book" value="${book.name}">
+input type="file"인경우에는 value가 안됨
+<input type="file" name="file">
+textarea도 value가 안되므로 태그사이에 출력한 값  setting
+<textarea name="content">${book.content}</textarea>
